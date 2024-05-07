@@ -15,7 +15,8 @@ start(_StartType, _StartArgs) ->
             %% Hello World
             {"/", index_handler, []},
             %% User
-            %% Package
+            %% Package Info
+            {"/package/[...]", package_handler, []},
             %% Auth
             {"/auth/[...]", auth_handler, []}
         ]}

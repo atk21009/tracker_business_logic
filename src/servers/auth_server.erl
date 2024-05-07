@@ -93,7 +93,7 @@ auth(<<"POST">>, <<"/auth/register">>, #{<<"email">> := Email, <<"password">> :=
 auth(<<"POST">>, <<"/auth/login">>, #{<<"email">> := Email, <<"password">> := Password}) ->
     gen_server:call(?MODULE, {login, {Email, Password}});
 %% Update
-auth(<<"PATCH">>, <<"/auth">>, _Data) ->
+auth(<<"PUT">>, <<"/auth">>, _Data) ->
     Req = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, <<"Bad Request">>),
     {ok, Req, undefined};
 %% Delete
