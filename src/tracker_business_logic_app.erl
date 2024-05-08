@@ -14,13 +14,13 @@ start(_StartType, _StartArgs) ->
         {'_', [
             %% Hello World
             {"/", index_handler, []},
-            %% User
             %% Package Info
             {"/package/[...]", package_handler, []},
             %% Auth
             {"/auth/[...]", auth_handler, []}
         ]}
     ]),
+    % URL http://localhost:8080
     {ok,_} = cowboy:start_clear(
         http,
         [{port, 8080}],

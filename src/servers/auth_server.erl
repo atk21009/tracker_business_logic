@@ -81,9 +81,11 @@ stop() -> gen_server:call(?MODULE, stop).
 %%
 %% @end
 %%--------------------------------------------------------------------
-%% Get User
+
+%% Get all users
 auth(<<"GET">>, <<"/auth/all">>, Data) ->
     gen_server:call(?MODULE, {get_all_objects, Data});
+%% Get User
 auth(<<"GET">>, <<"/auth">>, #{<<"email">> := Email}) ->
     gen_server:call(?MODULE, {user, {Email}});
 %% Register
@@ -139,9 +141,7 @@ init([]) ->
                                   {stop, term(), term(), integer()} | 
                                   {stop, term(), term()}.
 handle_call({get_all_objects, _}, _From, State) ->
-    % Assuming State is your current state containing the state record
     _ = #state{objects = Objects} = State,
-    % Encoding the state record into JSON
     JsonString = jsx:encode([{<<"objects">>, maps:to_list(Objects)}]),
     {reply, JsonString, State};
     

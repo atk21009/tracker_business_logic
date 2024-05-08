@@ -96,23 +96,28 @@ init([]) ->
 %% @end
 %%--------------------------------------------------------------------
 handle_call({get_package, Id}, _From, Riak_Pid) -> 
+    %% Retrieve data
     Data = database:get(Riak_Pid, <<"package">>, Id), 
     {reply, Data, Riak_Pid};
 
 handle_call({create_package, {Id, Latitude, Longitude}}, _From, Riak_Pid) ->
-    io:format("Creating package with ID: ~p, Latitude: ~p, Longitude: ~p~n", [Id, Latitude, Longitude]),
+    %% Create new package
     database:put(Riak_Pid, <<"package">>, Id, #{<<"Latitude">> => Latitude, <<"Longitude">> => Longitude}),
     {reply, [Id, Longitude, Latitude], Riak_Pid};
 
 handle_call({package_delivered, Id}, _From, Riak_Pid) -> 
+    %% Remove package
     database:delete(Riak_Pid, <<"package">>, Id),
+    %% Format message
     Msg = <<"Package ", Id/binary, " has been delivered">>,
     {reply, Msg, Riak_Pid};
 
 handle_call({get_package_location, Id}, _From, Riak_Pid) ->
+    %% Get Location Data
     Data = database:get(Riak_Pid, <<"package">>, Id),
     {reply, Data, Riak_Pid};
 
+%% TODO: Implement transfer logic
 handle_call({package_transfer, {Id, Latitude, Longitude}}, _From, Riak_Pid) ->
     package_transfer_event:call(package_transfer),
     io:format("ID: ~p~nLatitude: ~p~nLongitude: ~p~n", [Id, Latitude, Longitude]),

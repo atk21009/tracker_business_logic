@@ -7,10 +7,8 @@ init(Req0, Opts) ->
     Path = cowboy_req:path(Req0), % Path of url
     {ok,Data,_} = cowboy_req:read_body(Req0), % Body if any
     DecodedData = case Data of
-        <<>> -> 
-            {}; % pass empty tuple
-        _ ->
-            jsx:decode(Data) % decode data
+        <<>> -> {}; % pass empty tuple
+        _ -> jsx:decode(Data) % decode data
     end,
 
     % pass to server
