@@ -35,7 +35,6 @@ init([]) ->
     %% finite state machines (FSM), or other standard or custom
     %% OTP elements.
     ChildSpecList = [
-        child(auth_server, worker), % Auth
         child(package_server, worker) % Package Server
         ],
     {ok, {SupFlags, ChildSpecList}}.
