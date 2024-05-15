@@ -35,6 +35,7 @@ init([]) ->
     %% finite state machines (FSM), or other standard or custom
     %% OTP elements.
     ChildSpecList = [
+        child(location_server, worker), % Location Server
         child(package_server, worker) % Package Server
         ],
     {ok, {SupFlags, ChildSpecList}}.

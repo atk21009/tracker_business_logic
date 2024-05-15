@@ -6,88 +6,68 @@
 -endif.
 
 %% API
--export([start/0,start/3,stop/0,package/3]).
+-export([start/0,start/3,stop/0,package/3,get_bucket/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(BUCKET, get_bucket()).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts the server assuming there is only one server started for 
-%% this module. The server is registered locally with the registered
-%% name being the name of the module.
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec start() -> {ok, pid()} | ignore | {error, term()}.
 start() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
-%%--------------------------------------------------------------------
-%% @doc
-%% Starts a server using this module and registers the server using
-%% the name given.
-%% Registration_type can be local or global.
-%%
-%% Args is a list containing any data to be passed to the gen_server's
-%% init function.
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec start(atom(),atom(),atom()) -> {ok, pid()} | ignore | {error, term()}.
 start(Registration_type,Name,Args) ->
     gen_server:start_link({Registration_type, Name}, ?MODULE, Args, []).
-
-
-%%--------------------------------------------------------------------
-%% @doc
-%% Stops the server gracefully
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec stop() -> {ok}|{error, term()}.
 stop() -> gen_server:call(?MODULE, stop).
 
+%%--------------------------------------------------------------------
 %% Package details API
-package(<<"GET">>, <<"/package">>, #{<<"id">> := Id}) -> 
-    gen_server:call(?MODULE, {get_package, Id});
+%% %%--------------------------------------------------------------------
+package(<<"POST">>, <<"/package">>, #{<<"package_id">> := PackageId}) -> 
+    gen_server:call(?MODULE, {get_package, PackageId});
+
 %% Create package
-package(<<"POST">>, <<"/package/create">>, #{<<"id">> := Id, <<"latitude">> := Latitude, <<"longitude">> := Longitude}) ->
-    gen_server:call(?MODULE, {create_package, {Id, Latitude, Longitude}});
+package(<<"POST">>, <<"/package/create">>, #{<<"package_id">> := PackageId, <<"latitude">> := Latitude, <<"longitude">> := Longitude}) ->
+    gen_server:call(?MODULE, {create_package, {PackageId, Latitude, Longitude}});
+
 %% Package Delivered
-package(<<"POST">>, <<"/package/status">>, #{<<"id">> := Id}) -> 
-    gen_server:call(?MODULE, {package_delivered, Id});
+package(<<"POST">>, <<"/package/delivered">>, #{<<"package_id">> := PackageId}) -> 
+    gen_server:call(?MODULE, {package_delivered, PackageId});
+
 %% Request Location
-package(<<"GET">>, <<"/package/location">>, #{<<"id">> := Id}) ->
-    gen_server:call(?MODULE, {get_package_location, Id});
+package(<<"POST">>, <<"/package/location">>, #{<<"package_id">> := PackageId}) ->
+    gen_server:call(?MODULE, {get_package_location, PackageId});
+
 %% Package Transfer
-package(<<"POST">>, <<"/package/location">>, #{<<"id">> := Id, <<"latitude">> := Latitude, <<"longitude">> := Longitude}) ->
-    gen_server:call(?MODULE, {package_transfer, {Id, Latitude, Longitude}});
+package(<<"POST">>, <<"/package/transfer">>, #{<<"package_id">> := PackageId, <<"location_id">> := LocationId}) ->
+    gen_server:call(?MODULE, {package_transfer, {PackageId, LocationId}});
+
+%% Get all keys and items
+package(<<"POST">>, <<"/package/all">>, {}) ->
+    gen_server:call(?MODULE, {get_all});
+
+%% Get all keys
+package(<<"POST">>, <<"/package/keys">>, {}) ->
+    gen_server:call(?MODULE, {get_all_keys});
+
+package(<<"POST">>, <<"/package/clear">>, #{<<"auth">>:=Auth_key}) ->
+    gen_server:call(?MODULE, {clear, {Auth_key}});
+
 %% Not found
 package(_, _, _) -> 
-    Req = cowboy_req:reply(400, #{<<"content-type">> => <<"text/plain">>}, <<"Bad Request">>),
-    {ok, Req, undefined}.
+    gen_server:call(?MODULE, {error}).
 
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Initializes the server
-%%
-%% @end
-%%--------------------------------------------------------------------
 init([]) ->
     database:start_link().
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -95,33 +75,99 @@ init([]) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
-handle_call({get_package, Id}, _From, Riak_Pid) -> 
-    %% Retrieve data
-    Data = database:get(Riak_Pid, <<"package">>, Id), 
-    {reply, Data, Riak_Pid};
+handle_call({create_package, {PackageId, Latitude, Longitude}}, _From, Riak_Pid) ->
+    try 
+        {ok, LocationId} = location_functions:create_location(Riak_Pid, Latitude, Longitude),
+        {ok, Package} = package_functions:create_package(LocationId),
+        {ok} = package_functions:put_package(Riak_Pid, PackageId, Package),
+        {reply, {ok, [PackageId, Package]}, Riak_Pid}
+    catch
+        error:Reason ->
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
 
-handle_call({create_package, {Id, Latitude, Longitude}}, _From, Riak_Pid) ->
-    %% Create new package
-    database:put(Riak_Pid, <<"package">>, Id, #{<<"Latitude">> => Latitude, <<"Longitude">> => Longitude}),
-    {reply, [Id, Longitude, Latitude], Riak_Pid};
+handle_call({get_package, PackageId}, _From, Riak_Pid) -> 
+    try 
+        {ok, Package_Data} = package_functions:get_package(Riak_Pid, PackageId),
+        {ok, LocationId} = package_functions:get_package_location_id(Package_Data),
+        {ok, Location_Data} = location_functions:get_location(Riak_Pid, LocationId),
+        Response = #{<<"Package Data">> => Package_Data, <<"Location Data">> => Location_Data},
+        {reply, {ok, Response}, Riak_Pid}
+    catch
+        error:Reason ->
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
 
-handle_call({package_delivered, Id}, _From, Riak_Pid) -> 
-    %% Remove package
-    database:delete(Riak_Pid, <<"package">>, Id),
-    %% Format message
-    Msg = <<"Package ", Id/binary, " has been delivered">>,
-    {reply, Msg, Riak_Pid};
+handle_call({package_delivered, PackageId}, _From, Riak_Pid) -> 
+    try 
+        {ok, Package} = package_functions:get_package(Riak_Pid, PackageId),
+        {ok, Updated_package} = package_functions:package_delivered(Package),
+        {ok} = package_functions:put_package(Riak_Pid, PackageId, Updated_package),
+        {reply, {ok, Updated_package}, Riak_Pid}
+    catch
+        error:Reason ->
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
 
-handle_call({get_package_location, Id}, _From, Riak_Pid) ->
-    %% Get Location Data
-    Data = database:get(Riak_Pid, <<"package">>, Id),
-    {reply, Data, Riak_Pid};
+handle_call({get_package_location, PackageId}, _From, Riak_Pid) ->
+    try 
+        {ok, Package} = package_functions:get_package(Riak_Pid, PackageId),
+        {ok, LocationId} = package_functions:get_package_location_id(Package),
+        {ok, Location_Data} = location_functions:get_location(Riak_Pid, LocationId),
+        {reply, {ok, Location_Data}, Riak_Pid}
+    catch
+        error:Reason ->
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
+
+handle_call({get_all}, _From, Riak_Pid) ->
+    try 
+        {ok, Keys} = database:get_all(Riak_Pid, ?BUCKET),
+        {ok, All} = package_functions:get_all_items(Keys, Riak_Pid),
+        {reply, {ok, All}, Riak_Pid}
+    catch
+        error:Reason ->
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
+
+handle_call({get_all_keys}, _From, Riak_Pid) ->
+    try 
+        {ok, Keys} = database:get_all(Riak_Pid, ?BUCKET),
+        {reply, {ok, Keys}, Riak_Pid}
+    catch
+        error:Reason ->
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
 
 %% TODO: Implement transfer logic
-handle_call({package_transfer, {Id, Latitude, Longitude}}, _From, Riak_Pid) ->
-    package_transfer_event:call(package_transfer),
-    io:format("ID: ~p~nLatitude: ~p~nLongitude: ~p~n", [Id, Latitude, Longitude]),
-    {reply, [Id, Longitude, Latitude], Riak_Pid};
+handle_call({package_transfer, {Package_id, Location_id}}, _From, Riak_Pid) ->
+    try 
+        %% Get package 
+        {ok, Package} = package_functions:get_package(Riak_Pid, Package_id),
+        %% Get updated location
+        {ok, Updated} = location_functions:change_location(Riak_Pid, Location_id, Package),
+        %% If successful update package
+        {ok} = package_functions:put_package(Riak_Pid, Package_id, Updated),
+        {reply, {ok}, Riak_Pid}
+    catch
+        error:Reason ->
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
+
+handle_call({clear, {Auth_key}}, _From, Riak_Pid) ->
+    case auth_key:check_auth_key(Auth_key) of
+        true ->
+            database:clear_bucket(Riak_Pid, ?BUCKET),
+            Location_bucket = location_server:get_bucket(),
+            database:clear_bucket(Riak_Pid, Location_bucket),
+            {reply, {ok}, Riak_Pid};
+        _ ->
+            {reply, {fail}, Riak_Pid}
+    end;
+
+handle_call({error}, _From, Riak_Pid) ->
+    {reply, {fail, <<"Invalid Request">>}, Riak_Pid};
+    
 
 handle_call(stop, _From, _OldVsnRiak_Pid) ->
         {stop,normal,
@@ -183,9 +229,10 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 
-
 -ifdef(EUNIT).
-%%
-%% Unit tests go here. 
-%%
+get_bucket() ->
+    <<"package-test">>.
+-else.
+get_bucket() ->
+    <<"package">>.
 -endif.

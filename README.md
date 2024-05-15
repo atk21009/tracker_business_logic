@@ -1,9 +1,10 @@
 tracker_business_logic
-=====
 
-An OTP application
 
-Build
------
+### Package Data
 
-    $ rebar3 compile
+    Package_id: string {
+        location_id: string,
+        delivered: bool,
+        created: date
+    }

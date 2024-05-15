@@ -12,10 +12,20 @@ init(Req0, Opts) ->
     end,
 
     % pass to server
-    Res = jsx:encode(package_server:package(Method, Path, DecodedData)),
-    
-    % send response to user
-    Req = cowboy_req:reply(200, #{
-        <<"content-type">> => <<"text/json">>
-    }, Res, Req0),
-    {ok, Req, Opts}.
+    Res = package_server:package(Method, Path, DecodedData),
+    case Res of 
+        {ok, Response} ->
+            % send response to user
+            io:format("Response: ~p~n", [Response]),
+            ResponseData =  jsx:encode(Response),
+            io:format("Response Encoded: ~p~n", [ResponseData]),
+            Req = cowboy_req:reply(200, #{
+                <<"content-type">> => <<"text/json">>
+            }, ResponseData, Req0),
+            {ok, Req, Opts};
+        {fail, Reason} ->
+            Req = cowboy_req:reply(400, #{
+                <<"content-type">> => <<"text/json">>
+            }, Reason, Req0),
+            {fail, Req, Opts}
+    end.

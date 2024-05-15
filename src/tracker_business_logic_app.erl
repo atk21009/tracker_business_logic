@@ -15,7 +15,9 @@ start(_StartType, _StartArgs) ->
             %% Hello World
             {"/", index_handler, []},
             %% Package Info
-            {"/package/[...]", package_handler, []}
+            {"/package/[...]", package_handler, []},
+            %% Location Update
+            {"/location/[...]", location_handler, []}
         ]}
     ]),
     % URL http://localhost:8080

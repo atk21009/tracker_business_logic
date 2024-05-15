@@ -16,8 +16,12 @@
        {ref,"04e8cc7daa081c23be137b1eff2a6a3fb827f8e4"}},
   1},
  {<<"riakc">>,
-  {git,"https://github.com/basho/riak-erlang-client",
-       {ref,"e812164bc2dcc9cfc3e1e1bd3d472ca28d1eda90"}},
+  {git,"https://github.com/atk21009/riak-erlang-client.git",
+       {ref,"241de3333ca854d949ef83ae8ac343c921983131"}},
+  0},
+ {<<"uuid">>,
+  {git,"https://github.com/avtobiff/erlang-uuid.git",
+       {ref,"cb02a2039a9b29dd2eef0446039c9c6e164df9ef"}},
   0}]}.
 [
 {pkg_hash,[
