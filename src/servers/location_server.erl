@@ -37,7 +37,7 @@ stop() -> gen_server:call(?MODULE, stop).
 %%--------------------------------------------------------------------
 %% Other API
 %%--------------------------------------------------------------------
-location(<<"POST">>, <<"/location/update">>, []) ->
+location(<<"POST">>, <<"/location/update">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
     ok;
 
 location(<<"POST">>, <<"/location">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
@@ -84,10 +84,11 @@ handle_call({new, {LocationId, Latitude, Longitude}}, _From, Riak_Pid) ->
             {reply, {fail, Reason}, Riak_Pid}
     end;
 
-handle_call({rand_uuid}, _From, Riak_Pid) ->
-    LocationId = uuid:to_string(uuid:uuid1()),
-    LocationIdString = #{<<"Location_id">> => list_to_binary(LocationId)},
-    {reply, LocationIdString, Riak_Pid};
+handle_call({update_location}, _From, Riak_Pid) ->
+    {reply, ok, Riak_Pid};
+
+handle_call({all}, _From, Riak_Pid) ->
+    {reply, ok, Riak_Pid};
 
                                 
 handle_call(stop, _From, _State) ->
