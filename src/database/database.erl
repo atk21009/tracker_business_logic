@@ -7,7 +7,7 @@
 
 % Start link to db
 start_link() -> 
-    {ok, Pid} = riakc_pb_socket:start_link("127.0.0.1", 8087),
+    {ok, Pid} = riakc_pb_socket:start_link("riak.taylor58.dev", 8087),
     {ok, Pid}.
 
 %%--------------------------------------------------------------------
