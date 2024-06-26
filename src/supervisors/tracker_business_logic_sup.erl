@@ -29,7 +29,10 @@ init([]) ->
     SupFlags = #{strategy => one_for_all,
                  intensity => 2,
                  period => 3600},
-    ChildSpecs = [child(request_sup, supervisor)],
+    ChildSpecs = [
+        child(request_sup, supervisor),
+        child(database_sup, supervisor)
+    ],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions

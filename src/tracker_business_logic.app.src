@@ -12,8 +12,15 @@
     crypto
    ]},
   {env,[]},
-  {modules, []},
-
+  {modules, [
+      tracker_business_logic_app,
+      tracker_business_logic_sup,
+      request_sup,
+      database_sup,
+      location_server,
+      package_server,
+      database
+  ]},
   {licenses, ["Apache-2.0"]},
   {links, []}
  ]}.
