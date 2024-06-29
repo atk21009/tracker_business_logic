@@ -30,7 +30,8 @@ init([]) ->
                  intensity => 2,
                  period => 3600},
     ChildSpecs = [
-        child(request_sup, supervisor)
+        child(location_server, worker), % Location Server
+        child(package_server, worker) % Package Server
     ],
     {ok, {SupFlags, ChildSpecs}}.
 
