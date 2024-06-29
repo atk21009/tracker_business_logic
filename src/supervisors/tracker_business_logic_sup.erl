@@ -30,6 +30,7 @@ init([]) ->
                  intensity => 2,
                  period => 3600},
     ChildSpecs = [
+        child(database, worker),
         child(location_server, worker), % Location Server
         child(package_server, worker) % Package Server
     ],
