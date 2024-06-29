@@ -29,6 +29,7 @@
 %%% API
 %%%===================================================================
 start() ->
+    io:format("Starting location_server~n"),
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 start(Registration_type,Name,Args) ->
     gen_server:start_link({Registration_type, Name}, ?MODULE, Args, []).
