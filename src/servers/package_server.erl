@@ -19,6 +19,7 @@
 %%% API
 %%%===================================================================
 start() ->
+    io:format("Starting package_server~n"),
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 start(Registration_type,Name,Args) ->
     gen_server:start_link({Registration_type, Name}, ?MODULE, Args, []).
@@ -69,6 +70,7 @@ package(_, _, _) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
+    io:format("Initializing package_server~n"),
     database:start_link().
 
 %%--------------------------------------------------------------------
