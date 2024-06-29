@@ -71,7 +71,8 @@ package(_, _, _) ->
 %%%===================================================================
 init([]) ->
     io:format("Initializing package_server~n"),
-    database:start_link().
+    database:start_link(),
+    {ok, #{}}.
 
 %%--------------------------------------------------------------------
 %% @private
