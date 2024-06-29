@@ -57,6 +57,9 @@ package(<<"POST">>, <<"/package/keys">>, {}) ->
 package(<<"POST">>, <<"/package/clear">>, #{<<"auth">>:=Auth_key}) ->
     gen_server:call(?MODULE, {clear, {Auth_key}});
 
+package(<<"POST">>, <<"/package/test">>, #{}) ->
+    gen_server:call(?MODULE, {test});
+
 %% Not found
 package(_, _, _) -> 
     gen_server:call(?MODULE, {error}).
@@ -75,6 +78,10 @@ init([]) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
+
+handle_call({test}, _From, Riak_Pid) -> 
+    {reply, {ok, <<"IT WORKS!">>}, Riak_Pid};
+
 handle_call({create_package, {PackageId, Latitude, Longitude}}, _From, Riak_Pid) ->
     try 
         {ok, LocationId} = location_functions:create_location(Riak_Pid, Latitude, Longitude),
