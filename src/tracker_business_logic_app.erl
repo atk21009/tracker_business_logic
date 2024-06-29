@@ -10,8 +10,7 @@
 -export([start/2, stop/1]).
 
 start(_StartType, _StartArgs) ->
-    tracker_business_logic_sup:start_link(),
-    erpc:start([{name, ?MODULE}, {server, true}]).
+    tracker_business_logic_sup:start_link().
 
 stop(_State) ->
     ok.
