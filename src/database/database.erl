@@ -1,12 +1,12 @@
 -module(database).
--export([start_link/0]).
+-export([start/0]).
 -export([put/4]).
 -export([get/3, get_all/2]).
 -export([delete/3]).
 -export([clear_bucket/2]).
 
 % Start link to db
-start_link() -> 
+start() -> 
     {ok, Pid} = riakc_pb_socket:start_link("137.184.85.222", 8087),
     {ok, Pid}.
 
