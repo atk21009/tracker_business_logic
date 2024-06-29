@@ -30,8 +30,7 @@ init([]) ->
                  intensity => 2,
                  period => 3600},
     ChildSpecs = [
-        child(request_sup, supervisor),
-        child(database_sup, supervisor)
+        child(request_sup, supervisor)
     ],
     {ok, {SupFlags, ChildSpecs}}.
 
