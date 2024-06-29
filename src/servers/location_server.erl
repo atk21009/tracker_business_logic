@@ -44,6 +44,9 @@ location(<<"/location/update">>, #{<<"location_id">>:=LocationId,<<"latitude">>:
 location(<<"/location">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
     gen_server:call(?MODULE, {new, {LocationId, Latitude, Longitude}});
 
+location(<<"/package/test">>, #{}) ->
+    gen_server:call(?MODULE, {test});
+
 location(<<"/location/keys">>, _) ->
     gen_server:call(?MODULE, {all}).
 
@@ -93,6 +96,8 @@ handle_call({update_location, {LocationId, Latitude, Longitude}}, _From, Riak_Pi
 handle_call({all}, _From, Riak_Pid) ->
     {reply, ok, Riak_Pid};
 
+handle_call({test}, _From, Riak_Pid) -> 
+    {reply, {ok, <<"IT WORKS!">>}, Riak_Pid};
                                 
 handle_call(stop, _From, _State) ->
         {stop,normal,
