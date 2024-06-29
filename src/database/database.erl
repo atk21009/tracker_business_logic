@@ -7,6 +7,7 @@
 
 % Start link to db
 start() -> 
+    io:format("~nStarting database~n"),
     {ok, Pid} = riakc_pb_socket:start_link("137.184.85.222", 8087),
     {ok, Pid}.
 
