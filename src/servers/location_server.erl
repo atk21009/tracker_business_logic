@@ -44,7 +44,7 @@ location(<<"/location/update">>, #{<<"location_id">>:=LocationId,<<"latitude">>:
 location(<<"/location">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
     gen_server:call(?MODULE, {new, {LocationId, Latitude, Longitude}});
 
-location(<<"/package/test">>, #{}) ->
+location(<<"/location/test">>, #{}) ->
     gen_server:call(?MODULE, {test});
 
 location(<<"/location/keys">>, _) ->
