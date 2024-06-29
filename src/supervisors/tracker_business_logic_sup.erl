@@ -38,7 +38,7 @@ init([]) ->
 %% internal functions
 child(Module,Type) -> 
     #{id => Module,
-    start => {Module,start_link,[]},
+    start => {Module,start,[]},
     restart => permanent,
     shutdown => 2000,
     type => Type,
