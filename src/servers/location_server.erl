@@ -17,7 +17,7 @@
 -endif.
 
 %% API
--export([start/0,start/3,stop/0,location/3,get_bucket/0]).
+-export([start/0,start/3,stop/0,location/2,get_bucket/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -38,13 +38,13 @@ stop() -> gen_server:call(?MODULE, stop).
 %%--------------------------------------------------------------------
 %% Other API
 %%--------------------------------------------------------------------
-location(<<"POST">>, <<"/location/update">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
+location(<<"/location/update">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
     gen_server:call(?MODULE, {update_location, {LocationId, Latitude, Longitude}});
 
-location(<<"POST">>, <<"/location">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
+location(<<"/location">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
     gen_server:call(?MODULE, {new, {LocationId, Latitude, Longitude}});
 
-location(<<"POST">>, <<"/location/keys">>, _) ->
+location(<<"/location/keys">>, _) ->
     gen_server:call(?MODULE, {all}).
 
 %%%===================================================================

@@ -6,7 +6,7 @@
 -endif.
 
 %% API
--export([start/0,start/3,stop/0,package/3,get_bucket/0]).
+-export([start/0,start/3,stop/0,package/2,get_bucket/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -28,41 +28,41 @@ stop() -> gen_server:call(?MODULE, stop).
 %%--------------------------------------------------------------------
 %% Package details API
 %% %%--------------------------------------------------------------------
-package(<<"POST">>, <<"/package">>, #{<<"package_id">> := PackageId}) -> 
+package(<<"/package">>, #{<<"package_id">> := PackageId}) -> 
     gen_server:call(?MODULE, {get_package, PackageId});
 
 %% Create package
-package(<<"POST">>, <<"/package/create">>, #{<<"package_id">> := PackageId, <<"latitude">> := Latitude, <<"longitude">> := Longitude}) ->
+package(<<"/package/create">>, #{<<"package_id">> := PackageId, <<"latitude">> := Latitude, <<"longitude">> := Longitude}) ->
     gen_server:call(?MODULE, {create_package, {PackageId, Latitude, Longitude}});
 
 %% Package Delivered
-package(<<"POST">>, <<"/package/delivered">>, #{<<"package_id">> := PackageId}) -> 
+package(<<"/package/delivered">>, #{<<"package_id">> := PackageId}) -> 
     gen_server:call(?MODULE, {package_delivered, PackageId});
 
 %% Request Location
-package(<<"POST">>, <<"/package/location">>, #{<<"package_id">> := PackageId}) ->
+package(<<"/package/location">>, #{<<"package_id">> := PackageId}) ->
     gen_server:call(?MODULE, {get_package_location, PackageId});
 
 %% Package Transfer
-package(<<"POST">>, <<"/package/transfer">>, #{<<"package_id">> := PackageId, <<"location_id">> := LocationId}) ->
+package(<<"/package/transfer">>, #{<<"package_id">> := PackageId, <<"location_id">> := LocationId}) ->
     gen_server:call(?MODULE, {package_transfer, {PackageId, LocationId}});
 
 %% Get all keys and items
-package(<<"POST">>, <<"/package/all">>, {}) ->
+package(<<"/package/all">>, {}) ->
     gen_server:call(?MODULE, {get_all});
 
 %% Get all keys
-package(<<"POST">>, <<"/package/keys">>, {}) ->
+package(<<"/package/keys">>, {}) ->
     gen_server:call(?MODULE, {get_all_keys});
 
-package(<<"POST">>, <<"/package/clear">>, #{<<"auth">>:=Auth_key}) ->
+package(<<"/package/clear">>, #{<<"auth">>:=Auth_key}) ->
     gen_server:call(?MODULE, {clear, {Auth_key}});
 
-package(<<"POST">>, <<"/package/test">>, #{}) ->
+package(<<"/package/test">>, #{}) ->
     gen_server:call(?MODULE, {test});
 
 %% Not found
-package(_, _, _) -> 
+package(_, _) -> 
     gen_server:call(?MODULE, {error}).
 
 
