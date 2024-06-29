@@ -71,7 +71,8 @@ package(_, _, _) ->
 %%%===================================================================
 -spec init(term()) -> {ok, term()}|{ok, term(), number()}|ignore |{stop, term()}.
 init([]) ->
-    database:start_link().
+    %database:start_link()
+    {ok, #{}}.
 
 %%--------------------------------------------------------------------
 %% @private
