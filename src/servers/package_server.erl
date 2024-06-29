@@ -69,10 +69,9 @@ package(_, _, _) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
+-spec init(term()) -> {ok, term()}|{ok, term(), number()}|ignore |{stop, term()}.
 init([]) ->
-    io:format("Initializing package_server~n"),
-    database:start_link(),
-    {ok, #{}}.
+    database:start_link().
 
 %%--------------------------------------------------------------------
 %% @private
