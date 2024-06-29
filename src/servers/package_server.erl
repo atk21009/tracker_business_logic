@@ -149,7 +149,6 @@ handle_call({get_all_keys}, _From, Riak_Pid) ->
             {reply, {fail, Reason}, Riak_Pid}
     end;
 
-%% TODO: Implement transfer logic
 handle_call({package_transfer, {Package_id, Location_id}}, _From, Riak_Pid) ->
     try 
         %% Get package 
@@ -158,7 +157,7 @@ handle_call({package_transfer, {Package_id, Location_id}}, _From, Riak_Pid) ->
         {ok, Updated} = location_functions:change_location(Riak_Pid, Location_id, Package),
         %% If successful update package
         {ok} = package_functions:put_package(Riak_Pid, Package_id, Updated),
-        {reply, {ok}, Riak_Pid}
+        {reply, {ok, <<"Successfully transfered package">>}, Riak_Pid}
     catch
         error:Reason ->
             {reply, {fail, Reason}, Riak_Pid}
@@ -170,7 +169,7 @@ handle_call({clear, {Auth_key}}, _From, Riak_Pid) ->
             database:clear_bucket(Riak_Pid, ?BUCKET),
             Location_bucket = location_server:get_bucket(),
             database:clear_bucket(Riak_Pid, Location_bucket),
-            {reply, {ok}, Riak_Pid};
+            {reply, {ok, <<"Successfully cleared">>}, Riak_Pid};
         _ ->
             {reply, {fail}, Riak_Pid}
     end;

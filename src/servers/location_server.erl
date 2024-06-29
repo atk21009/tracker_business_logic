@@ -83,7 +83,7 @@ init([]) ->
 handle_call({new, {LocationId, Latitude, Longitude}}, _From, Riak_Pid) ->
     try 
         {ok} = location_functions:create_location(Riak_Pid, LocationId, Latitude, Longitude),
-        {reply, {ok}, Riak_Pid}
+        {reply, {ok, <<"Successfully created package">>}, Riak_Pid}
     catch
         error:Reason ->
             {reply, {fail, Reason}, Riak_Pid}
@@ -94,7 +94,7 @@ handle_call({update_location, {LocationId, Latitude, Longitude}}, _From, Riak_Pi
     {reply, Response, Riak_Pid};
 
 handle_call({all}, _From, Riak_Pid) ->
-    {reply, ok, Riak_Pid};
+    {reply, {ok, <<"YEP">>}, Riak_Pid};
 
 handle_call({test}, _From, Riak_Pid) -> 
     {reply, {ok, <<"IT WORKS!">>}, Riak_Pid};
