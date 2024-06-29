@@ -71,6 +71,7 @@ package(_, _, _) ->
 %%%===================================================================
 -spec init(term()) -> {ok, term()}|{ok, term(), number()}|ignore |{stop, term()}.
 init([]) ->
+    io:format("Package Server Started~n"),
     database:start().
 
 %%--------------------------------------------------------------------

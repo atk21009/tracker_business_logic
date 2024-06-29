@@ -60,6 +60,7 @@ location(<<"POST">>, <<"/location/keys">>, _) ->
 %%--------------------------------------------------------------------
 -spec init(term()) -> {ok, term()}|{ok, term(), number()}|ignore |{stop, term()}.
 init([]) ->
+    io:format("location_server started~n"),
     database:start().
 %%--------------------------------------------------------------------
 %% @private
