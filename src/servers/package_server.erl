@@ -169,7 +169,7 @@ handle_call({clear, {Auth_key}}, _From, Riak_Pid) ->
             database:clear_bucket(Riak_Pid, ?BUCKET),
             Location_bucket = location_server:get_bucket(),
             database:clear_bucket(Riak_Pid, Location_bucket),
-            {reply, {ok, <<"Successfully cleared">>}, Riak_Pid};
+            {reply, {ok}, Riak_Pid};
         _ ->
             {reply, {fail}, Riak_Pid}
     end;

@@ -8,7 +8,7 @@ package_server_test() ->
     package_server:start(),
 
     Auth = env_variables:auth_key(),
-    ?assertEqual({ok}, package_server:package(<<"POST">>, <<"/package/clear">>, #{<<"auth">> => Auth})),
+    ?assertEqual({ok}, package_server:package(<<"/package/clear">>, #{<<"auth">> => Auth})),
 
     % Create Package Tests - Successful
     ?assertEqual(ok, create_package_test(#{<<"package_id">> => <<"1234">>, <<"latitude">> => <<"123456">>, <<"longitude">> => <<"67890">>})),
@@ -61,7 +61,7 @@ package_server_test() ->
 %% Create package - test
 %%--------------------------------------------------------------------
 create_package_test(PLL) ->    
-    case package_server:package(<<"POST">>, <<"/package/create">>, PLL) of 
+    case package_server:package(<<"/package/create">>, PLL) of 
         {ok, _} ->
             ok;
         {fail, _} ->
@@ -71,7 +71,7 @@ create_package_test(PLL) ->
 %% Get package - test
 %%--------------------------------------------------------------------
 get_package_test(Package_id) ->
-    case package_server:package(<<"POST">>, <<"/package">>, Package_id) of 
+    case package_server:package(<<"/package">>, Package_id) of 
         {ok,_} ->
             ok;
         {fail, _} ->
@@ -81,7 +81,7 @@ get_package_test(Package_id) ->
 %% Deliver package - test
 %%--------------------------------------------------------------------
 deliver_package_test(Package_id) ->
-    case package_server:package(<<"POST">>, <<"/package/delivered">>, Package_id) of
+    case package_server:package(<<"/package/delivered">>, Package_id) of
         {ok, _} -> 
             ok;
         {fail, _} ->
@@ -91,7 +91,7 @@ deliver_package_test(Package_id) ->
 %% Get package location - test
 %%--------------------------------------------------------------------
 get_package_location(Package_id) ->
-    case package_server:package(<<"POST">>, <<"/package/location">>, Package_id) of
+    case package_server:package(<<"/package/location">>, Package_id) of
         {ok,_} ->
             ok;
         {fail, _} ->
@@ -101,7 +101,7 @@ get_package_location(Package_id) ->
 %% Get all - test
 %%--------------------------------------------------------------------
 get_all_items() ->
-    case package_server:package(<<"POST">>, <<"/package/all">>, {}) of
+    case package_server:package(<<"/package/all">>, {}) of
         {ok, _} ->
             ok;
         {fail, _} ->
@@ -111,7 +111,7 @@ get_all_items() ->
 %% Get all keys - test
 %%--------------------------------------------------------------------
 get_all_keys() ->
-    case package_server:package(<<"POST">>, <<"/package/keys">>, {}) of
+    case package_server:package(<<"/package/keys">>, {}) of
         {ok, _} ->
             ok;
         {fail, _} ->
@@ -121,8 +121,8 @@ get_all_keys() ->
 %% Transfer package - test
 %%--------------------------------------------------------------------
 transfer_package(Transfer_data) ->
-    case package_server:package(<<"POST">>, <<"/package/transfer">>, Transfer_data) of
-        {ok} ->
+    case package_server:package(<<"/package/transfer">>, Transfer_data) of
+        {ok, _} ->
             ok;
         {fail, _} ->
             fail
@@ -136,7 +136,7 @@ transfer_package(Transfer_data) ->
 %% Helper Functions
 %%--------------------------------------------------------------------
 get_location_id(Package_id) ->
-    {ok, ResponseMap} = package_server:package(<<"POST">>, <<"/package">>, Package_id),
+    {ok, ResponseMap} = package_server:package(<<"/package">>, Package_id),
     LocationData = maps:get(<<"Package Data">>, ResponseMap),
     Location_id = maps:get(<<"location_id">>, LocationData),
     Location_id.

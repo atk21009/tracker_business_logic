@@ -8,7 +8,7 @@ location_server_test() ->
 
     %% EUNIT Tests
     %% Update Location - Success
-    location_server:location(<<"POST">>, <<"/location/update">>, #{<<"location_id">>=><<"123456">>,<<"latitude">>=><<"123344">>,<<"longitude">>=><<"67890">>}),
+    location_server:location(<<"/location/update">>, #{<<"location_id">>=><<"123456">>,<<"latitude">>=><<"123344">>,<<"longitude">>=><<"67890">>}),
     %% Update Location - Edge Cases
     %% Get Location - Success 
     %% Get Location - Edge Cases
