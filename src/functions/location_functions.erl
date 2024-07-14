@@ -1,5 +1,5 @@
 -module(location_functions).
--export([get_location/2, create_location/3, create_location/4, change_location/3]).
+-export([get_location/2, create_location/2, change_location/4]).
 -define(BUCKET, location_server:get_bucket()).
 
 -ifdef(TEST).
@@ -16,52 +16,52 @@ get_location(Riak_Pid, LocationId) ->
             {error, Reason}
     end.
 
-create_location(Riak_Pid, Latitude, Longitude) ->
+create_location(Riak_Pid, LocationId) ->
     try 
-            % Create unique Id
-        LocationId = uuid:to_string(uuid:uuid1()),
         BinaryKey = list_to_binary(LocationId),
-        % Generate map object
-        Location = [
-            {<<"latitude">>, <<Latitude/binary>>},
-            {<<"longitude">>, <<Longitude/binary>>}
-        ],
-        % place location in db
-        database:put(Riak_Pid, ?BUCKET, BinaryKey, Location),
-        {ok, LocationId}
+        
+        case database:get(Riak_Pid, ?BUCKET, LocationId) of 
+            {ok, _} ->
+                {ok, <<"Already Exists">>};
+            {error, not_found} ->
+                % Generate map object
+                Location = [
+                    {<<"latitude">>, <<>>},
+                    {<<"longitude">>, <<>>}
+                ],
+                % place location in db
+                database:put(Riak_Pid, ?BUCKET, BinaryKey, Location),
+                {ok, LocationId}
+        end
     catch
         error:Reason ->
             {error, Reason}
     end.
 
-create_location(Riak_Pid, LocationId, Latitude, Longitude) ->
-    try 
-        Location = [
-            {<<"latitude">>, <<Latitude/binary>>},
-            {<<"longitude">>, <<Longitude/binary>>}
-        ],
-        {ok} = database:put(Riak_Pid, ?BUCKET, LocationId, Location),
-        {ok}
-    catch
-        error:Reason ->
-            {error, Reason}
-    end.
-
-change_location(Riak_Pid, Location_id, Package) ->
+change_location(Riak_Pid, Location_id, Latitude, Longitude) ->
     try
+        % Create unique Id
+        BinaryKey = list_to_binary(Location_id),
+        
         % Check if location id exists
-        {ok, _} = database:get(Riak_Pid, ?BUCKET, Location_id),
-        % Get package details and ensure not delivered
-        false = maps:get(<<"delivered">>, Package),
-        Created = maps:get(<<"created">>, Package),    
-        % Update package location_id
-        Updated = #{
-            <<"location_id">> => Location_id,
-            <<"delivered">> => false,
-            <<"created">> => Created
-        },
-        % return updated
-        {ok, Updated}
+        case database:get(Riak_Pid, ?BUCKET, BinaryKey) of
+            {ok, Location} ->
+                % Update the latitude and longitude values
+                UpdatedLocation = lists:map(
+                    fun
+                        ({<<"latitude">>, _}) -> {<<"latitude">>, list_to_binary(Latitude)};
+                        ({<<"longitude">>, _}) -> {<<"longitude">>, list_to_binary(Longitude)};
+                        (Other) -> Other
+                    end, 
+                    Location
+                ),
+                
+                % Store the updated location back in the database
+                database:put(Riak_Pid, ?BUCKET, BinaryKey, UpdatedLocation),
+                {ok, Location_id};
+            {error, not_found} ->
+                {error, location_not_found}
+        end
     catch
         error:Reason ->
             {error, Reason}

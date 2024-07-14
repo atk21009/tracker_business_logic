@@ -6,7 +6,7 @@
 -endif.
 
 %% API
--export([start/0,start/3,stop/0,package/2,get_bucket/0]).
+-export([start/0, start/3, stop/0, package/2, get_bucket/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -15,61 +15,42 @@
 -define(SERVER, ?MODULE).
 -define(BUCKET, get_bucket()).
 
+
 %%%===================================================================
 %%% API
 %%%===================================================================
 start() ->
     io:format("Starting package_server~n"),
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
-start(Registration_type,Name,Args) ->
+
+start(Registration_type, Name, Args) ->
     gen_server:start_link({Registration_type, Name}, ?MODULE, Args, []).
+
 stop() -> gen_server:call(?MODULE, stop).
 
 %%--------------------------------------------------------------------
 %% Package details API
-%% %%--------------------------------------------------------------------
-package(<<"/package">>, #{<<"package_id">> := PackageId}) -> 
-    gen_server:call(?MODULE, {get_package, PackageId});
+%%--------------------------------------------------------------------
+package(<<"/package_transferred">>, #{<<"package_id">> := PackageId, <<"location_id">> := LocationId}) ->
+    gen_server:call(?MODULE, {package_transfer, PackageId, LocationId});
 
-%% Create package
-package(<<"/package/create">>, #{<<"package_id">> := PackageId, <<"latitude">> := Latitude, <<"longitude">> := Longitude}) ->
-    gen_server:call(?MODULE, {create_package, {PackageId, Latitude, Longitude}});
+package(<<"/delivered">>, #{<<"package_id">> := PackageId}) ->
+    gen_server:call(?MODULE, {delivered, PackageId});
 
-%% Package Delivered
-package(<<"/package/delivered">>, #{<<"package_id">> := PackageId}) -> 
-    gen_server:call(?MODULE, {package_delivered, PackageId});
-
-%% Request Location
-package(<<"/package/location">>, #{<<"package_id">> := PackageId}) ->
-    gen_server:call(?MODULE, {get_package_location, PackageId});
-
-%% Package Transfer
-package(<<"/package/transfer">>, #{<<"package_id">> := PackageId, <<"location_id">> := LocationId}) ->
-    gen_server:call(?MODULE, {package_transfer, {PackageId, LocationId}});
-
-%% Get all keys and items
-package(<<"/package/all">>, {}) ->
-    gen_server:call(?MODULE, {get_all});
-
-%% Get all keys
-package(<<"/package/keys">>, {}) ->
-    gen_server:call(?MODULE, {get_all_keys});
-
-package(<<"/package/clear">>, #{<<"auth">>:=Auth_key}) ->
-    gen_server:call(?MODULE, {clear, {Auth_key}});
+package(<<"/location_request">>, #{<<"package_id">> := PackageId}) ->
+    gen_server:call(?MODULE, {location, PackageId});
 
 package(<<"/package/test">>, #{}) ->
     gen_server:call(?MODULE, {test});
 
 %% Not found
-package(_, _) -> 
+package(_, _) ->
     gen_server:call(?MODULE, {error}).
-
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
--spec init(term()) -> {ok, term()}|{ok, term(), number()}|ignore |{stop, term()}.
+-spec init(term()) -> {ok, term()} | {ok, term(), number()} | ignore | {stop, term()}.
 init([]) ->
     io:format("Package Server Started~n"),
     database:start().
@@ -81,13 +62,9 @@ init([]) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
-
-handle_call({test}, _From, Riak_Pid) -> 
-    {reply, {ok, <<"IT WORKS!">>}, Riak_Pid};
-
-handle_call({create_package, {PackageId, Latitude, Longitude}}, _From, Riak_Pid) ->
+handle_call({package_transfer, PackageId, LocationId}, _From, Riak_Pid) -> 
     try 
-        {ok, LocationId} = location_functions:create_location(Riak_Pid, Latitude, Longitude),
+        {ok} = location_functions:create_location(Riak_Pid, LocationId),
         {ok, Package} = package_functions:create_package(LocationId),
         {ok} = package_functions:put_package(Riak_Pid, PackageId, Package),
         {reply, {ok, [PackageId, Package]}, Riak_Pid}
@@ -96,19 +73,7 @@ handle_call({create_package, {PackageId, Latitude, Longitude}}, _From, Riak_Pid)
             {reply, {fail, Reason}, Riak_Pid}
     end;
 
-handle_call({get_package, PackageId}, _From, Riak_Pid) -> 
-    try 
-        {ok, Package_Data} = package_functions:get_package(Riak_Pid, PackageId),
-        {ok, LocationId} = package_functions:get_package_location_id(Package_Data),
-        {ok, Location_Data} = location_functions:get_location(Riak_Pid, LocationId),
-        Response = #{<<"Package Data">> => Package_Data, <<"Location Data">> => Location_Data},
-        {reply, {ok, Response}, Riak_Pid}
-    catch
-        error:Reason ->
-            {reply, {fail, Reason}, Riak_Pid}
-    end;
-
-handle_call({package_delivered, PackageId}, _From, Riak_Pid) -> 
+handle_call({delivered, PackageId}, _From, Riak_Pid) ->
     try 
         {ok, Package} = package_functions:get_package(Riak_Pid, PackageId),
         {ok, Updated_package} = package_functions:package_delivered(Package),
@@ -119,7 +84,7 @@ handle_call({package_delivered, PackageId}, _From, Riak_Pid) ->
             {reply, {fail, Reason}, Riak_Pid}
     end;
 
-handle_call({get_package_location, PackageId}, _From, Riak_Pid) ->
+handle_call({location, PackageId}, _From, Riak_Pid) ->
     try 
         {ok, Package} = package_functions:get_package(Riak_Pid, PackageId),
         {ok, LocationId} = package_functions:get_package_location_id(Package),
@@ -130,58 +95,11 @@ handle_call({get_package_location, PackageId}, _From, Riak_Pid) ->
             {reply, {fail, Reason}, Riak_Pid}
     end;
 
-handle_call({get_all}, _From, Riak_Pid) ->
-    try 
-        {ok, Keys} = database:get_all(Riak_Pid, ?BUCKET),
-        {ok, All} = package_functions:get_all_items(Keys, Riak_Pid),
-        {reply, {ok, All}, Riak_Pid}
-    catch
-        error:Reason ->
-            {reply, {fail, Reason}, Riak_Pid}
-    end;
+handle_call({test}, _From, Riak_Pid) -> 
+    {reply, {ok, <<"Package server works">>}, Riak_Pid};
 
-handle_call({get_all_keys}, _From, Riak_Pid) ->
-    try 
-        {ok, Keys} = database:get_all(Riak_Pid, ?BUCKET),
-        {reply, {ok, Keys}, Riak_Pid}
-    catch
-        error:Reason ->
-            {reply, {fail, Reason}, Riak_Pid}
-    end;
-
-handle_call({package_transfer, {Package_id, Location_id}}, _From, Riak_Pid) ->
-    try 
-        %% Get package 
-        {ok, Package} = package_functions:get_package(Riak_Pid, Package_id),
-        %% Get updated location
-        {ok, Updated} = location_functions:change_location(Riak_Pid, Location_id, Package),
-        %% If successful update package
-        {ok} = package_functions:put_package(Riak_Pid, Package_id, Updated),
-        {reply, {ok, <<"Successfully transfered package">>}, Riak_Pid}
-    catch
-        error:Reason ->
-            {reply, {fail, Reason}, Riak_Pid}
-    end;
-
-handle_call({clear, {Auth_key}}, _From, Riak_Pid) ->
-    case auth_key:check_auth_key(Auth_key) of
-        true ->
-            database:clear_bucket(Riak_Pid, ?BUCKET),
-            Location_bucket = location_server:get_bucket(),
-            database:clear_bucket(Riak_Pid, Location_bucket),
-            {reply, {ok, <<"Successfully cleared">>}, Riak_Pid};
-        _ ->
-            {reply, {fail}, Riak_Pid}
-    end;
-
-handle_call({error}, _From, Riak_Pid) ->
-    {reply, {fail, <<"Invalid Request">>}, Riak_Pid};
-    
-
-handle_call(stop, _From, _OldVsnRiak_Pid) ->
-        {stop,normal,
-                replace_stopped,
-          down}. %% setting the server's internal state to down
+handle_call(stop, _From, State) ->
+    {stop, normal, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -218,7 +136,7 @@ handle_info(_Info, State) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec terminate(Reason::term(), term()) -> term().
+-spec terminate(Reason::term(), State::term()) -> term().
 terminate(_Reason, _State) ->
     ok.
     
@@ -229,19 +147,18 @@ terminate(_Reason, _State) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec code_change(term(), term(), term()) -> {ok, term()}.
+-spec code_change(term(), State::term(), Extra::term()) -> {ok, term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-    
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-
 -ifdef(EUNIT).
 get_bucket() ->
     <<"package-test">>.
 -else.
 get_bucket() ->
     <<"package">>.
+
 -endif.

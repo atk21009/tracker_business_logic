@@ -38,17 +38,11 @@ stop() -> gen_server:call(?MODULE, stop).
 %%--------------------------------------------------------------------
 %% Other API
 %%--------------------------------------------------------------------
-location(<<"/location/update">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
+location(<<"/location_update">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
     gen_server:call(?MODULE, {update_location, {LocationId, Latitude, Longitude}});
 
-location(<<"/location">>, #{<<"location_id">>:=LocationId,<<"latitude">>:=Latitude,<<"longitude">>:=Longitude}) ->
-    gen_server:call(?MODULE, {new, {LocationId, Latitude, Longitude}});
-
 location(<<"/location/test">>, #{}) ->
-    gen_server:call(?MODULE, {test});
-
-location(<<"/location/keys">>, _) ->
-    gen_server:call(?MODULE, {all}).
+    gen_server:call(?MODULE, {test}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -79,22 +73,9 @@ init([]) ->
 % {stop, term(), term()}.
 %% @end
 %%--------------------------------------------------------------------
-
-handle_call({new, {LocationId, Latitude, Longitude}}, _From, Riak_Pid) ->
-    try 
-        {ok} = location_functions:create_location(Riak_Pid, LocationId, Latitude, Longitude),
-        {reply, {ok, <<"Successfully created package">>}, Riak_Pid}
-    catch
-        error:Reason ->
-            {reply, {fail, Reason}, Riak_Pid}
-    end;
-
 handle_call({update_location, {LocationId, Latitude, Longitude}}, _From, Riak_Pid) ->
-    Response = location_functions:create_location(Riak_Pid, LocationId, Latitude, Longitude),
+    Response = location_functions:change_location(Riak_Pid, LocationId, Latitude, Longitude),
     {reply, Response, Riak_Pid};
-
-handle_call({all}, _From, Riak_Pid) ->
-    {reply, {ok, <<"YEP">>}, Riak_Pid};
 
 handle_call({test}, _From, Riak_Pid) -> 
     {reply, {ok, <<"IT WORKS!">>}, Riak_Pid};

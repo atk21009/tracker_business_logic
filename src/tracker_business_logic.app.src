@@ -8,7 +8,8 @@
     stdlib,
     riakc,
     uuid,
-    crypto
+    crypto,
+    meck
    ]},
   {env,[]},
   {modules, [
