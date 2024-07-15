@@ -6,7 +6,7 @@
 -endif.
 
 %% API
--export([start/0, start/3, stop/0, package/2, get_bucket/0]).
+-export([start/0, start/3, stop/0, package/2, get_bucket/0, get_location_bucket/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -20,7 +20,6 @@
 %%% API
 %%%===================================================================
 start() ->
-    io:format("Starting package_server~n"),
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 start(Registration_type, Name, Args) ->
@@ -39,6 +38,9 @@ package(<<"/delivered">>, #{<<"package_id">> := PackageId}) ->
 
 package(<<"/location_request">>, #{<<"package_id">> := PackageId}) ->
     gen_server:call(?MODULE, {location, PackageId});
+
+package(<<"/location_update">>, #{<<"location_id">>:=LocationId, <<"latitude">>:=Latitude, <<"longitude">>:=Longitude}) ->
+    gen_server:call(?MODULE, {update_location, {LocationId, Latitude, Longitude}});
 
 package(<<"/package/test">>, #{}) ->
     gen_server:call(?MODULE, {test});
@@ -62,14 +64,15 @@ init([]) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
-handle_call({package_transfer, PackageId, LocationId}, _From, Riak_Pid) -> 
-    try 
-        {ok} = location_functions:create_location(Riak_Pid, LocationId),
+
+handle_call({package_transfer, PackageId, LocationId}, _From, Riak_Pid) ->
+    try
         {ok, Package} = package_functions:create_package(LocationId),
         {ok} = package_functions:put_package(Riak_Pid, PackageId, Package),
-        {reply, {ok, [PackageId, Package]}, Riak_Pid}
+        {reply, {ok}, Riak_Pid}
     catch
         error:Reason ->
+            io:format("Error in create_package: ~p~n", [Reason]),
             {reply, {fail, Reason}, Riak_Pid}
     end;
 
@@ -78,7 +81,7 @@ handle_call({delivered, PackageId}, _From, Riak_Pid) ->
         {ok, Package} = package_functions:get_package(Riak_Pid, PackageId),
         {ok, Updated_package} = package_functions:package_delivered(Package),
         {ok} = package_functions:put_package(Riak_Pid, PackageId, Updated_package),
-        {reply, {ok, Updated_package}, Riak_Pid}
+        {reply, {ok}, Riak_Pid}
     catch
         error:Reason ->
             {reply, {fail, Reason}, Riak_Pid}
@@ -95,11 +98,25 @@ handle_call({location, PackageId}, _From, Riak_Pid) ->
             {reply, {fail, Reason}, Riak_Pid}
     end;
 
+handle_call({update_location, {LocationId, Latitude, Longitude}}, _From, Riak_Pid) ->
+    io:format("handle_call: update_location with LocationId: ~p, Latitude: ~p, Longitude: ~p~n", [LocationId, Latitude, Longitude]),
+    try
+        {ok} = location_functions:change_location(Riak_Pid, LocationId, Latitude, Longitude),
+        {reply, {ok}, Riak_Pid}
+    catch
+        error:Reason ->
+            io:format("Error in update location: ~p~n", [Reason]),
+            {reply, {fail, Reason}, Riak_Pid}
+    end;
+
 handle_call({test}, _From, Riak_Pid) -> 
     {reply, {ok, <<"Package server works">>}, Riak_Pid};
 
+handle_call({error}, _From, Riak_Pid) ->
+    {reply, {fail, <<"Invalid request">>}, Riak_Pid};
+
 handle_call(stop, _From, State) ->
-    {stop, normal, State}.
+    {stop, normal, ok, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -157,8 +174,11 @@ code_change(_OldVsn, State, _Extra) ->
 -ifdef(EUNIT).
 get_bucket() ->
     <<"package-test">>.
+get_location_bucket() ->
+    <<"location-test">>.
 -else.
 get_bucket() ->
     <<"package">>.
-
+get_location_bucket() ->
+    <<"location">>.
 -endif.

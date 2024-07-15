@@ -24,13 +24,14 @@ create_package(LocationId) ->
         DateString = today_date(),
         %% Create package
         Package = #{
-            <<"location_id">> => list_to_binary(LocationId),
+            <<"location_id">> => LocationId,
             <<"delivered">> => false,
             <<"created">> => list_to_binary(DateString)
         },
         {ok, Package}
     catch
         error:Reason ->
+            io:format("Error in handle_call: ~p~n", [Reason]),
             {error, Reason}
     end.
 %%--------------------------------------------------------------------

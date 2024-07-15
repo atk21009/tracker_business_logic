@@ -8,7 +8,7 @@
 % Start link to db
 start() -> 
     io:format("~nStarting database~n"),
-    {ok, Pid} = riakc_pb_socket:start_link("137.184.85.222", 8087),
+    {ok, Pid} = riakc_pb_socket:start_link("127.0.0.1", 8087),
     io:format("Database Started~n"),
     {ok, Pid}.
 
@@ -19,9 +19,11 @@ put(Pid, Bucket, Key, Value) ->
     try
         JsonValue = jsx:encode(Value),
         Request = riakc_obj:new(Bucket, Key, JsonValue),
-        riakc_pb_socket:put(Pid, Request)
+        riakc_pb_socket:put(Pid, Request),
+        {ok}
     catch
         error:Reason ->
+            io:format("Error in putting from database: ~p~n", [Reason]),
             {error, Reason}
     end.
 %%--------------------------------------------------------------------
@@ -34,6 +36,7 @@ get(Pid, Bucket, Key) ->
             Decoded = jsx:decode(Value),
             {ok, Decoded};
         {error, Reason} ->
+            io:format("Error in getting from database: ~p~n", [Reason]),
             {error, Reason}
     end.
 

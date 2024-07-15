@@ -7,37 +7,43 @@ package_server_test() ->
     % Start server
     package_server:start(),
 
-    Auth = env_variables:auth_key(),
-    ?assertEqual({ok}, package_server:package(<<"/package/clear">>, #{<<"auth">> => Auth})),
-
     % Create Package Tests - Successful
-    ?assertEqual(ok, create_package_test(#{<<"package_id">> => <<"1234">>, <<"location_id">> => <<"123456">>})),
-    ?assertEqual(ok, create_package_test(#{<<"package_id">> => <<"567890">>, <<"location_id">> => <<"12512363">>})),
+    ?assertEqual(ok, package_transfer(#{<<"package_id">> => <<"1234">>, <<"location_id">> => <<"123456">>})),
+    ?assertEqual(ok, package_transfer(#{<<"package_id">> => <<"567890">>, <<"location_id">> => <<"12512363">>})),
     % Create Package Tests - Edge Cases
-    ?assertEqual(fail, create_package_test(#{<<"package_id">> => <<"1234">>, <<"latitude">> => <<"123456">>})),
-    ?assertEqual(fail, create_package_test(#{<<"package_id">> => <<"1234">>,<<"longitude">> => <<"67890">>})),
-    ?assertEqual(fail, create_package_test(#{<<"package_id">> => <<"1234">>})),
+    ?assertEqual(fail, package_transfer(#{<<"package_id">> => <<"1234">>})),
+    ?assertEqual(fail, package_transfer(#{<<"package_id">> => <<"1234">>})),
+    ?assertEqual(fail, package_transfer(#{<<"package_id">> => <<"1234">>})),
+
+    % Update Location
+    ?assertEqual(ok, location_update(#{<<"location_id">> =><<"123456">>, <<"latitude">>=><<"123456789">>, <<"longitude">> =><<"987654321">>})),
+    ?assertEqual(ok, location_update(#{<<"location_id">> =><<"12512363">>, <<"latitude">>=><<"987654321">>, <<"longitude">> =><<"123456789">>})),
+    % Update location - edge case
+    ?assertEqual(fail, location_update(#{<<"location_id">> =><<"12512363">>, <<"latitude">>=><<"987654321">>})),
+    ?assertEqual(fail, location_update(#{<<"location_id">> =><<"12512363">>,<<"longitude">> =><<"123456789">>})),
+    ?assertEqual(fail, location_update(#{<<"location_id">> =><<"12512363">>})),
+
 
     % Get Package Tests - Successful
-    ?assertEqual(ok, get_package_test(#{<<"package_id">> => <<"1234">>})),
-    ?assertEqual(ok, get_package_test(#{<<"package_id">> => <<"567890">>})),
+    ?assertEqual(ok, location_request(#{<<"package_id">> => <<"1234">>})),
+    ?assertEqual(ok, location_request(#{<<"package_id">> => <<"567890">>})),
     % Get Package Tests - Edge Cases
-    ?assertEqual(fail, get_package_test(#{<<"package_id">> => <<"">>})),
-    ?assertEqual(fail, get_package_test(#{})),
+    ?assertEqual(fail, location_request(#{<<"package_id">> => <<"">>})),
+    ?assertEqual(fail, location_request(#{})),
 
 
     % Transfer Package - Successful
-    ?assertEqual(ok, transfer_package(#{<<"package_id">> => <<"1234">>, <<"location_id">> => <<"12512363">>})),
-    ?assertEqual(ok, transfer_package(#{<<"package_id">> => <<"567890">>, <<"location_id">> => <<"123456">>})),
+    ?assertEqual(ok, package_transfer(#{<<"package_id">> => <<"1234">>, <<"location_id">> => <<"12512363">>})),
+    ?assertEqual(ok, package_transfer(#{<<"package_id">> => <<"567890">>, <<"location_id">> => <<"123456">>})),
     
     % Transfer Package - Edge Cases
-    ?assertEqual(fail, transfer_package(#{<<"package_id">> => <<"1234">>, <<"location_id">> => <<"12345678">>})),
-    ?assertEqual(fail, transfer_package(#{<<"package_id">> => <<"2315346">>, <<"location_id">> => <<"12345678">>})),
+    ?assertEqual(fail, package_transfer(#{<<"package_id">> => <<"1234">>})),
+    ?assertEqual(fail, package_transfer(#{<<"location_id">> => <<"12345678">>})),
 
-    % Deliver Package - Successful
+    % % Deliver Package - Successful
     ?assertEqual(ok, deliver_package_test(#{<<"package_id">> => <<"1234">>})),
     ?assertEqual(ok, deliver_package_test(#{<<"package_id">> => <<"567890">>})),
-    % Deliver Package - Edge Cases
+    % % Deliver Package - Edge Cases
     ?assertEqual(fail, deliver_package_test(#{<<"package_id">> => <<"111221321312">>})),
     ?assertEqual(fail, deliver_package_test(#{})),
 
@@ -47,9 +53,9 @@ package_server_test() ->
 %%--------------------------------------------------------------------
 %% Create package - test
 %%--------------------------------------------------------------------
-create_package_test(PLL) ->    
+package_transfer(PLL) ->    
     case package_server:package(<<"/package_transferred">>, PLL) of 
-        {ok, _} ->
+        {ok} ->
             ok;
         {fail, _} ->
             fail
@@ -57,7 +63,7 @@ create_package_test(PLL) ->
 %%--------------------------------------------------------------------
 %% Get package - test
 %%--------------------------------------------------------------------
-get_package_test(Package_id) ->
+location_request(Package_id) ->
     case package_server:package(<<"/location_request">>, Package_id) of 
         {ok,_} ->
             ok;
@@ -69,7 +75,7 @@ get_package_test(Package_id) ->
 %%--------------------------------------------------------------------
 deliver_package_test(Package_id) ->
     case package_server:package(<<"/delivered">>, Package_id) of
-        {ok, _} -> 
+        {ok} -> 
             ok;
         {fail, _} ->
             fail
@@ -78,8 +84,8 @@ deliver_package_test(Package_id) ->
 %%--------------------------------------------------------------------
 %% Transfer package - test
 %%--------------------------------------------------------------------
-transfer_package(Transfer_data) ->
-    case package_server:package(<<"/package/transfer">>, Transfer_data) of
+location_update(Transfer_data) ->
+    case package_server:package(<<"/location_update">>, Transfer_data) of
         {ok} ->
             ok;
         {fail, _} ->
