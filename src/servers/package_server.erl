@@ -13,7 +13,6 @@
          terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE).
--define(BUCKET, get_bucket()).
 
 
 %%%===================================================================
