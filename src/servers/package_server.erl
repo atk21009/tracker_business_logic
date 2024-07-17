@@ -32,13 +32,13 @@ stop() -> gen_server:call(?MODULE, stop).
 package(<<"/package_transferred">>, #{<<"package_id">> := PackageId, <<"location_id">> := LocationId}) ->
     gen_server:call(?MODULE, {package_transfer, PackageId, LocationId});
 
-package(<<"/delivered">>, #{<<"package_id">> := PackageId}) ->
+package(<<"/delivered">>, PackageId) ->
     gen_server:call(?MODULE, {delivered, PackageId});
 
-package(<<"/location_request">>, #{<<"package_id">> := PackageId}) ->
+package(<<"/location_request">>, PackageId) ->
     gen_server:call(?MODULE, {location, PackageId});
 
-package(<<"/location_update">>, #{<<"location_id">>:=LocationId, <<"latitude">>:=Latitude, <<"longitude">>:=Longitude}) ->
+package(<<"/location_update">>, #{<<"location_id">>:=LocationId, <<"lat">>:=Latitude, <<"long">>:=Longitude}) ->
     gen_server:call(?MODULE, {update_location, {LocationId, Latitude, Longitude}});
 
 package(<<"/package/test">>, #{}) ->
